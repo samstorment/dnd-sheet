@@ -1,12 +1,13 @@
 <script lang="ts">
     import { Lock, LockOpen } from "lucide-svelte";
 
-    const { list = $bindable(), type }: Props = $props();
+    const { list = $bindable(), type, class: className = '' }: Props = $props();
 
     let locked = $state(false);
 
     interface Props {
         type: string;
+        class?: string;
         list: Array<{
             name: string; paren?: string;
         }>
@@ -27,7 +28,7 @@
     </div>
 {/snippet}
 
-<div class="border border-zinc-800 p-1 rounded-md text-zinc-800 group">
+<div class="flex flex-col justify-between border border-zinc-800 p-1 rounded-md text-zinc-800 group {className}">
     {#each list as l}
         {@render row(l)}
     {/each}
