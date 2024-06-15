@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
     import ArmorClass from "./ACInitiativeSpeed.svelte";
     import Attacks from "./Attacks.svelte";
     import CurrentHitPoints from "./CurrentHitPoints.svelte";
@@ -131,7 +131,4 @@
         @apply bg-zinc-100 rounded-md;
     }
 
-    input {
-        @apply border-b border-zinc-800;
-    }
 </style>

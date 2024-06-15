@@ -27,6 +27,7 @@
 }
 
 body {
+    /* font-family: monospace; */
     line-height: 1.5;
     -webkit-font-smoothing: antialiased;
 }
@@ -46,20 +47,4 @@ p, h1, h2, h3, h4, h5, h6 {
 
 #root, #__next {
     isolation: isolate;
-}
-
-/* treating article as a full print page */
-article {
-    width: 8.5in;
-    height: 11in;
-    padding: 0.15in;
-    margin: 0 auto;
-}
-
-:is(input, textarea, button):not(:disabled):is(:hover, :focus) {
-    @apply outline outline-blue-600 z-10;
-}
-
-:is(input, textarea, button):disabled:is(:hover, :focus) {
-    @apply outline outline-zinc-400 z-10;
 }
