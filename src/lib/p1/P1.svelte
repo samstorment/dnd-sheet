@@ -8,7 +8,7 @@
     import OrbLabel from "./OrbLabel.svelte";
     import SavingThrowskills from "./SavingThrowsSkills.svelte";
     import Stat from "./Stat.svelte";
-    import TextArea from "./TextArea.svelte";
+    import TextArea from "../TextArea.svelte";
     import TempHitPoints from "./TempHitPoints.svelte";
     import Header from "./Header.svelte";
 
@@ -47,7 +47,7 @@
 
     <Header />
 
-    <div id="main-grid">
+    <div class="main-grid">
         <section class="stats flex flex-col gap-3 p-1">
             <Stat label="Strength" />
             <Stat label="Dexterity" />
@@ -105,7 +105,7 @@
 
 
 <style lang="postcss">
-    #main-grid {
+    .main-grid {
         display: grid;
         gap: .5rem;
         grid-template-columns: 1fr 2fr 2.9fr 2.9fr;
@@ -127,7 +127,7 @@
     .other { grid-area: other; }
     .equipment { grid-area: equipment; }
     
-    #main-grid > * {
+    .main-grid > * {
         @apply bg-zinc-100 rounded-md;
     }
 

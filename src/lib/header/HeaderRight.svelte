@@ -4,6 +4,6 @@
     const { children }: { children: Snippet }= $props();
 </script>
 
-<section class="p-2 border border-zinc-600 rounded-md">
+<section class="p-2 border border-zinc-600 rounded-md w-full">
     {@render children()}
 </section>
