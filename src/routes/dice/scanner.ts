@@ -91,65 +91,10 @@ export function scanner(input: string) {
         const lexeme = input.slice(start, current);
         tokens.push({ type, literal, lexeme, start, end: current });
     }
-
-    function expand() {
-        const result: Token[] = [];
-
-        function isValidPreDiceToken(token?: Token) {
-            if (token?.type !== 'number') return false;
-            const num = token.literal as number;
-            if (num <= 0) return false;
-            return Number.isInteger(num);
-        }
-
-        for (let i = 0; i < tokens.length; i++) {
-            const t = tokens[i];
-
-            const next = i === tokens.length - 1 ? undefined : tokens[i + 1];
-
-            if (isValidPreDiceToken(t) && next?.type === 'dice') {
-                continue;
-            }
-
-            if (t.type !== 'dice') {
-                result.push(t);
-                continue;
-            }
-
-            let numRolls = 1;
-
-            const prev = i === 0 ? undefined : tokens[i - 1];
-
-            if (isValidPreDiceToken(prev)) {
-                numRolls = prev?.literal as number;
-            }
-
-            result.push({ start: 0, end: 0, lexeme: '(', literal: undefined, type: "(" });
-
-            const rolls = Array
-                .from({ length: numRolls }, () => rand(1, t.literal as number));
-                
-            if (numRolls < 101) {
-                rolls.forEach((r, j) => {
-                    result.push({ start: 0, end: 0, lexeme: r.toString(), literal: r, type: "number" });
-                    if (j < numRolls - 1) {
-                        result.push({ start: 0, end: 0, lexeme: '+', literal: undefined, type: "+" });
-                    }
-                });
-            } else {
-                const sumOfRolls = rolls.reduce((a, b) => a + b); 
-                result.push({ start: 0, end: 0, lexeme: sumOfRolls.toString(), literal: sumOfRolls, type: "number" });
-            }
-
-            result.push({ start: 0, end: 0, lexeme: ')', literal: undefined, type: ")" });
-        }
-
-        return result;
-    }
     
 
     return {
-        scan, expand
+        scan
     }
 
 }
