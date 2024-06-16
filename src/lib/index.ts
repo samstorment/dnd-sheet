@@ -16,7 +16,7 @@ export function isNumeric(char: string) {
     return char >= '0' && char <= '9';
 }
 
-export function isAlphanumeric(char: string) {
+export function isAlphaNumeric(char: string) {
     // Use the previous functions to check if the character is either alphabetic or numeric
     return isAlpha(char) || isNumeric(char);
 }
@@ -27,7 +27,15 @@ export function domify(str: string) {
         .toLocaleLowerCase();
 
     const advanced = [...basic]
-        .filter(ch => isAlphanumeric(ch) || ch === '_' || ch === '-');
+        .filter(ch => isAlphaNumeric(ch) || ch === '_' || ch === '-');
 
     return advanced.join('');
+}
+
+export function rand(min: number, max: number) {
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+export function run<T>(fn: () => T): T {
+    return fn();
 }

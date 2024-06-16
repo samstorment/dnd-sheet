@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { domify, isAlphanumeric } from "$lib";
+    import { domify, isAlphaNumeric } from "$lib";
 
     const { fields }: { fields: string[] } = $props();
 </script>
