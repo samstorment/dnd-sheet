@@ -2,14 +2,20 @@
     import { fly, scale, slide } from "svelte/transition";
     import { scanner, type Token } from "./scanner";
     import { rand } from "$lib";
-    import { Smile, Frown } from "lucide-svelte";
+    import { Smile, Frown, Dices, Repeat2 } from "lucide-svelte";
+    import SyntaxHighlight from './SyntaxHighlight.svelte';
 
     let q = $state('');
     let _scanner = $derived(scanner(q));
     let tokens = $derived(_scanner.scan());
+    let useful = $derived(tokens.filter(t => t.type !== "garbage"));
     let expanded: Token[] = $state([]);
 
+    let scroll = $state(0);
+
     let show = $state(false);
+
+    let empty = $derived(q.trim() === '');
 
     let result = $derived.by(() => {
         const str = expanded
@@ -25,7 +31,9 @@
     });
 
     let smile = $derived(result && !show);
-    let frown = $derived(!result && !show && q.trim() !== '');
+    let frown = $derived(!result && !show && !empty);
+
+    let textarea: HTMLTextAreaElement;
 
     let examples = [
         'd20',
@@ -48,10 +56,10 @@
             return Number.isInteger(num);
         }
 
-        for (let i = 0; i < tokens.length; i++) {
-            const t = tokens[i];
+        for (let i = 0; i < useful.length; i++) {
+            const t = useful[i];
 
-            const next = i === tokens.length - 1 ? undefined : tokens[i + 1];
+            const next = i === useful.length - 1 ? undefined : useful[i + 1];
 
             if (isValidPreDiceToken(t) && next?.type === 'dice') {
                 continue;
@@ -64,7 +72,7 @@
 
             let numRolls = 1;
 
-            const prev = i === 0 ? undefined : tokens[i - 1];
+            const prev = i === 0 ? undefined : useful[i - 1];
 
             if (isValidPreDiceToken(prev)) {
                 numRolls = prev?.literal as number;
@@ -104,36 +112,50 @@
             show = true;
             expanded = expand();
         }}
-        class="flex gap-4 max-sm:flex-col"
+        class="bg-zinc-800 rounded-md"
     >
-        <input 
-            type="text"
-            autocomplete="off"
-            oninput={(e) => {
-                show = false;
-                expanded = expand();
-            }}
-            bind:this={input} bind:value={q} id="q" 
-            class="border-2 border-zinc-400 rounded-lg w-full text-4xl p-2 font-bold focus:border-blue-500 focus:ring-8 focus:outline-none"
-        >
-        <button type="submit" class="bg-yellow-500 text-yellow-950 border-2 border-yellow-900 px-6 py-4 rounded-md hover:scale-105 active:scale-100 transition-[scale] text-xl font-bold">
-            {!show ? "Roll" : "Reroll"}
-        </button>
-    </form>
 
-    {#if tokens.length > 1 && !show}
-        <div 
-            in:scale={{  duration: 200 }}
-            class="flex flex-wrap bg-zinc-800 gap-2 p-4 rounded-md max-w-full"
-        >
-            {#each tokens.filter(t => t.type !== 'eof') as t}
-                <div data-token={t.type}>
-                    <pre class="text hover:ring-4">{t.lexeme}</pre>
-                    <pre class="json">{JSON.stringify(t, null, 2)}</pre>
-                </div>
-            {/each}
+        <div class="isolate flex-1">
+            <div class="relative text-4xl ring-zinc-600 overflow-hidden rounded-md">
+                <SyntaxHighlight {tokens} {scroll} />
+                <div class="absolute inset-0 -z-20"></div>
+                <textarea 
+                    bind:value={q} 
+                    bind:this={textarea}
+                    rows="1"
+                    spellcheck="false"
+                    class="w-full p-4 text-transparent caret-zinc-400 bg-transparent font-mono max-h-[12ex] resize-none" 
+                    onscroll={e => {
+                        scroll = textarea.scrollTop;
+                    }}
+                    oninput={async () => {
+                        textarea.style.removeProperty('height');
+                        textarea.style.height = `${textarea.scrollHeight}px`;
+                        show = false;
+                        expanded = expand();
+                    }}
+                    onkeypress={e => {
+                        if (e.key === "Enter" && !e.shiftKey) {
+                            e.preventDefault();
+                            textarea.closest("form")?.requestSubmit();
+                        }
+                    }}
+                ></textarea>
+            </div>
         </div>
-    {/if}
+
+        <div class="flex justify-end p-2">
+            <button type="submit" 
+                disabled={frown || !result}
+                class="{smile || result ? "bg-green-600 text-green-100" : "bg-transparent text-zinc-600"}
+                 px-4 py-1 rounded-md hover:scale-105 active:scale-100 transition-[scale] text-xl flex gap-2"
+            >
+                <span>{result && show ? "Reroll" : "Roll"}</span>
+                <Dices class="" />
+            </button>
+        </div>
+    </form>
+    
 
     {#if expanded.length > 1 && show}
         <div 
@@ -170,7 +192,7 @@
         </div>
     {/if}
 
-    {#if q.trim() === ''}
+    {#if empty}
         <div 
             in:fly={{  duration: 200, y: 250 }}
             class="rounded-md p-4 bg-zinc-800 text-zinc-100">
@@ -202,7 +224,7 @@
             in:scale={{  duration: 200 }}
             class="result flex flex-wrap gap-2 px-12 py-4 rounded-md text-zinc-800 font-bold text-6xl mx-auto border border-zinc-200 shadow-md max-w-full"
         >
-            <span>{result?.toLocaleString('en-US') ?? '?'}</span>
+            <span in:scale>{result?.toLocaleString('en-US') ?? '?'}</span>
         </div>
     {/if}
     
@@ -257,29 +279,22 @@
         left: 0;
     }
 
-    [data-token]:hover .json {
-        /* display: block; */
-    }
 
     [data-token='number'] .text {
-        background-color: hsl(110, 80%, 85%);
-        color: hsl(110, 100%, 15%);
+        color: hsl(200, 50%, 55%);
+
     }
 
     [data-token='dice'] .text {
-        background-color: hsl(0, 80%, 70%);
-        color: hsl(0, 100%, 15%);
+        color: hsl(50, 50%, 55%);
     }
 
     :is([data-token='*'], [data-token='/'], [data-token='+'], [data-token='-']) .text {
-        color: hsl(236, 80%, 80%);
-        font-weight: 900;
-        padding: 0 .1rem;
+       color: hsl(0, 0%, 80%);
     }
 
     :is([data-token='('], [data-token=')']) .text {
-        color: hsl(46, 100%, 50%);
-        font-weight: 900;
-        padding: 0;
+       color: hsl(300, 50%, 55%);
+       font-weight: bold;
     }
 </style>

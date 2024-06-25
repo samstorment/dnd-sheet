@@ -33,21 +33,34 @@ export function scanner(input: string) {
         const c = advance();
 
         switch (c) {
-            case ' ': break;
             case '(':
             case ')':
             case '+':
             case '-': 
             case '*':
             case '/':
-                addToken(c); break;
+                addToken(c); return;
             case 'd':
-                if (isNumeric(peekChar())) scanDice();
-                break;
+                if (isNumeric(peekChar())) return scanDice();
             default:
-                if (isNumeric(c)) scanNumber(); 
+                if (isNumeric(c)) return scanNumber();
         }
 
+        scanGarbage();
+    }
+
+    function scanGarbage() {
+        const c = peekChar();
+
+        const ops = ['(', ')', '+', '-', '*', '/'];
+
+        if (isAtEnd() || ops.includes(c) || isNumeric(c) || (c === 'd' && isNumeric(nextChar()))) {
+            addToken('garbage');
+            return;
+        }
+
+        advance();
+        scanGarbage();
     }
 
     function scanDice() {
@@ -104,6 +117,7 @@ export type TokenType =
     'number' | 'dice' |
     '(' | ')' |
     '+' | '-' | '*' | '/' |
+    'garbage' |
     'eof';
 
 
