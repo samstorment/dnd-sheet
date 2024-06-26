@@ -30,8 +30,8 @@
         }
     });
 
-    let smile = $derived(result && !show);
-    let frown = $derived(!result && !show && !empty);
+    let smile = $derived(result !== undefined && !show);
+    let frown = $derived(result === undefined && !show && !empty);
 
     let textarea: HTMLTextAreaElement;
 
@@ -40,8 +40,7 @@
         '2d6',
         '8d8 + 7',
         '11d14 - 4d37 + (2 * 54)',      
-        '(6d12 + 3d4 - 4d6 + 8) / 2',
-        '101d20 + 100d20'
+        '(6d12 + 3d4 - 4d6 + 8) / 2'
     ]
 
     let input: HTMLInputElement | undefined;
@@ -103,133 +102,132 @@
 
 </script>
 
-
-<div id="dice" class="p-4 flex flex-col gap-4 max-w-screen-lg mx-auto">
-    <form 
-        onsubmit={e => { 
-            e.preventDefault();
-            if (frown) { return };
-            show = true;
-            expanded = expand();
-        }}
-        class="bg-zinc-800 rounded-md"
-    >
-
-        <div class="isolate flex-1">
-            <div class="relative text-4xl ring-zinc-600 overflow-hidden rounded-md">
-                <SyntaxHighlight {tokens} {scroll} />
-                <div class="absolute inset-0 -z-20"></div>
-                <textarea 
-                    bind:value={q} 
-                    bind:this={textarea}
-                    rows="1"
-                    spellcheck="false"
-                    class="w-full p-4 text-transparent caret-zinc-400 bg-transparent font-mono max-h-[12ex] resize-none" 
-                    onscroll={e => {
-                        scroll = textarea.scrollTop;
-                    }}
-                    oninput={async () => {
-                        textarea.style.removeProperty('height');
-                        textarea.style.height = `${textarea.scrollHeight}px`;
-                        show = false;
-                        expanded = expand();
-                    }}
-                    onkeypress={e => {
-                        if (e.key === "Enter" && !e.shiftKey) {
-                            e.preventDefault();
-                            textarea.closest("form")?.requestSubmit();
-                        }
-                    }}
-                ></textarea>
-            </div>
-        </div>
-
-        <div class="flex justify-end p-2">
-            <button type="submit" 
-                disabled={frown || !result}
-                class="{smile || result ? "bg-green-600 text-green-100" : "bg-transparent text-zinc-600"}
-                 px-4 py-1 rounded-md hover:scale-105 active:scale-100 transition-[scale] text-xl flex gap-2"
-            >
-                <span>{result && show ? "Reroll" : "Roll"}</span>
-                <Dices class="" />
-            </button>
-        </div>
-    </form>
-    
-
-    {#if expanded.length > 1 && show}
-        <div 
-            in:scale={{  duration: 200 }}
-            class="flex flex-wrap bg-zinc-800 gap-2 p-4 rounded-md"
+<div class="bg-zinc-950 h-screen">
+    <div id="dice" class="p-4 flex flex-col gap-4 max-w-screen-lg mx-auto">
+        <form 
+            onsubmit={e => { 
+                e.preventDefault();
+                if (frown) { return };
+                show = true;
+                expanded = expand();
+            }}
+            class="bg-zinc-800 rounded-md border border-zinc-600"
         >
-            {#each expanded.filter(t => t.type !== 'eof') as t}
-                <div data-token={t.type}>
-                    <pre class="text hover:ring-4">{t.lexeme}</pre>
-                    <pre class="json">{JSON.stringify(t, null, 2)}</pre>
+
+            <div class="isolate flex-1">
+                <div class="relative text-3xl ring-zinc-600 overflow-hidden rounded-md">
+                    <SyntaxHighlight {tokens} {scroll} />
+                    <textarea 
+                        bind:value={q} 
+                        bind:this={textarea}
+                        placeholder="Enter dice roll"
+                        rows="1"
+                        spellcheck="false"
+                        class="w-full p-4 text-transparent caret-zinc-400 bg-transparent font-mono max-h-[12ex] resize-none placeholder:text-zinc-600 placeholder:text-xl placeholder:leading-9" 
+                        onscroll={e => {
+                            scroll = textarea.scrollTop;
+                        }}
+                        oninput={async () => {
+                            textarea.style.removeProperty('height');
+                            textarea.style.height = `${textarea.scrollHeight}px`;
+                            show = false;
+                            expanded = expand();
+                        }}
+                        onkeypress={e => {
+                            if (e.key === "Enter" && !e.shiftKey) {
+                                e.preventDefault();
+                                textarea.closest("form")?.requestSubmit();
+                            }
+                        }}
+                    ></textarea>
                 </div>
-            {/each}
-        </div>
+            </div>
 
-    {/if}
+            <div class="flex justify-end p-2">
+                <button type="submit" 
+                    disabled={frown || result === undefined}
+                    class="{smile || result !== undefined ? "bg-green-700 text-green-100" : "bg-transparent text-zinc-600"}
+                    px-4 py-1 rounded-md hover:scale-105 active:scale-100 transition-[scale] text-xl flex gap-2"
+                >
+                    <span>{result !== undefined && show ? "Reroll" : "Roll"}</span>
+                    <Dices class="" />
+                </button>
+            </div>
+        </form>
+        
 
-    {#if smile}
-        <div 
-            in:scale={{  duration: 200 }}
-            class="result flex items-center gap-4 px-12 py-4 rounded-md text-zinc-800 font-bold text-2xl mx-auto border border-zinc-200 shadow-md max-w-full max-sm:flex-col max-sm:w-full"
-        >
-            <span>Ready to Roll</span>
-            <Smile class="w-12 h-12 text-green-600"/>
-        </div>
-    {/if}
-
-    {#if frown}
-        <div 
-            in:scale={{  duration: 200 }}
-            class="result flex items-center gap-4 px-12 py-4 rounded-md text-zinc-800 font-bold text-2xl mx-auto border border-zinc-200 shadow-md max-w-full max-sm:flex-col max-sm:w-full"
-        >
-            <span>Invalid Syntax</span>
-            <Frown class="w-12 h-12 text-red-600"/>
-        </div>
-    {/if}
-
-    {#if empty}
-        <div 
-            in:fly={{  duration: 200, y: 250 }}
-            class="rounded-md p-4 bg-zinc-800 text-zinc-100">
-            <p class="mb-6">Try a dice roll!</p>
-
-            <p class="mb-2">Examples:</p>
-            <ul class="grid gap-1 bg-zinc-300 text-zinc-950 rounded-md shadow-inner shadow-zinc-600">
-                {#each examples as ex}
-                    <li class="flex items-center border-b border-zinc-400 p-2 last-of-type:border-none">
-                        <span>{ex}</span>
-                        <button
-                            onclick={() => { 
-                                q = ex;
-                                show = false;
-                                expanded = expand();
-                            }}
-                            class="ml-auto border border-zinc-800 py-1 px-2 text-sm bg-zinc-600 text-zinc-100 rounded-md shadow-md shadow-zinc-600"
-                        >
-                            Try It!
-                        </button>
-                    </li>
+        {#if expanded.length > 1 && show}
+            <div 
+                in:scale={{  duration: 200 }}
+                class="flex flex-wrap bg-zinc-800 gap-2 p-4 rounded-md border border-zinc-600"
+            >
+                {#each expanded.filter(t => t.type !== 'eof') as t}
+                    <div data-token={t.type}>
+                        <pre class="text hover:ring-4">{t.lexeme}</pre>
+                        <!-- <pre class="json">{JSON.stringify(t, null, 2)}</pre> -->
+                    </div>
                 {/each}
-            </ul>
-        </div>
-    {/if}
+            </div>
 
-    {#if result && show}
-        <div 
-            in:scale={{  duration: 200 }}
-            class="result flex flex-wrap gap-2 px-12 py-4 rounded-md text-zinc-800 font-bold text-6xl mx-auto border border-zinc-200 shadow-md max-w-full"
-        >
-            <span in:scale>{result?.toLocaleString('en-US') ?? '?'}</span>
-        </div>
-    {/if}
-    
+        {/if}
+
+        {#if smile}
+            <div 
+                in:scale={{  duration: 200 }}
+                class="result flex items-center gap-4 px-12 py-4 rounded-md bg-green-700 text-green-100 font-bold text-2xl mx-auto shadow-md max-w-full max-sm:flex-col max-sm:w-full"
+            >
+                <span>Ready to Roll</span>
+                <Smile class="w-12 h-12"/>
+            </div>
+        {/if}
+
+        {#if frown}
+            <div 
+                in:scale={{  duration: 200 }}
+                class="result flex items-center gap-4 px-12 py-4 rounded-md bg-red-800 text-red-100 font-bold text-2xl mx-auto shadow-md max-w-full max-sm:flex-col max-sm:w-full"
+            >
+                <span>Invalid Syntax</span>
+                <Frown class="w-12 h-12"/>
+            </div>
+        {/if}
+
+        {#if empty}
+            <div 
+                in:fly={{  duration: 200, y: 250 }}
+                class="text-zinc-300">
+
+                <p class="mb-4 text-lg text-zinc-400">Examples:</p>
+                <ul class="rounded-md border border-zinc-600 overflow-hidden bg-zinc-800">
+                    {#each examples as ex}
+                        <li class="flex items-center p-2 border-b border-zinc-600 last-of-type:border-none">
+                            <span>{ex}</span>
+                            <button
+                                onclick={() => { 
+                                    q = ex;
+                                    show = false;
+                                    expanded = expand();
+                                }}
+                                class="ml-auto border border-zinc-600 py-1 px-2 text-sm bg-zinc-900 rounded-md shadow-md shadow-zinc-800"
+                            >
+                                Try It!
+                            </button>
+                        </li>
+                    {/each}
+                </ul>
+            </div>
+        {/if}
+
+        {#if result !== undefined && show}
+            <div 
+                in:scale={{  duration: 200 }}
+                class="result flex flex-wrap gap-2 px-12 py-4 rounded-md text-zinc-100 font-bold text-6xl mx-auto border border-zinc-600 bg-zinc-800 shadow-md max-w-full"
+            >
+                <span in:scale>{result?.toLocaleString('en-US') ?? '?'}</span>
+            </div>
+        {/if}
+        
+    </div>
 </div>
-
 
 
 <style>
