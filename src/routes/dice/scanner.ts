@@ -41,6 +41,7 @@ export function scanner(input: string) {
             case '/':
                 addToken(c); return;
             case 'd':
+            case 'D':
                 if (isNumeric(peekChar())) return scanDice();
             default:
                 if (isNumeric(c)) return scanNumber();

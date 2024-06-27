@@ -2,8 +2,9 @@
     import { fly, scale, slide } from "svelte/transition";
     import { scanner, type Token } from "./scanner";
     import { rand } from "$lib";
-    import { Smile, Frown, Dices, Repeat2 } from "lucide-svelte";
+    import { Smile, Frown, Dices, Repeat2, ArrowDown, ArrowBigDown, MoveDown, ArrowUp, Dice6 } from "lucide-svelte";
     import SyntaxHighlight from './SyntaxHighlight.svelte';
+    import { onMount, tick } from "svelte";
 
     let q = $state('');
     let _scanner = $derived(scanner(q));
@@ -44,6 +45,25 @@
     ]
 
     let input: HTMLInputElement | undefined;
+
+    onMount(() => {
+        const observer = new ResizeObserver((entries, observer) => {
+            recalcHeight();
+        });
+
+        observer.observe(textarea);
+    })
+
+    function recalcHeight() {
+        textarea.style.removeProperty('height');
+        textarea.style.height = `${textarea.scrollHeight}px`;
+    }
+
+    function recalcTextArea() {
+        recalcHeight();
+        show = false;
+        expanded = expand();
+    }
 
     function expand() {
         const result: Token[] = [];
@@ -102,7 +122,7 @@
 
 </script>
 
-<div class="bg-zinc-950 h-screen">
+<div class="bg-zinc-950 min-h-dvh">
     <div id="dice" class="p-4 flex flex-col gap-4 max-w-screen-lg mx-auto">
         <form 
             onsubmit={e => { 
@@ -128,10 +148,7 @@
                             scroll = textarea.scrollTop;
                         }}
                         oninput={async () => {
-                            textarea.style.removeProperty('height');
-                            textarea.style.height = `${textarea.scrollHeight}px`;
-                            show = false;
-                            expanded = expand();
+                            recalcTextArea();
                         }}
                         onkeypress={e => {
                             if (e.key === "Enter" && !e.shiftKey) {
@@ -146,19 +163,49 @@
             <div class="flex justify-end p-2">
                 <button type="submit" 
                     disabled={frown || result === undefined}
-                    class="{smile || result !== undefined ? "bg-green-700 text-green-100" : "bg-transparent text-zinc-600"}
+                    class="{
+                        smile || result !== undefined ? 
+                            "bg-green-700 text-green-100" :
+                            "bg-transparent text-zinc-600"
+                    }
                     px-4 py-1 rounded-md hover:scale-105 active:scale-100 transition-[scale] text-xl flex gap-2"
                 >
-                    <span>{result !== undefined && show ? "Reroll" : "Roll"}</span>
+                    <span>{
+                        result !== undefined && show ? 
+                            "Reroll" : 
+                        frown || empty ?
+                            "Invalid" : 
+                        "Roll"
+                    }</span>
                     <Dices class="" />
                 </button>
             </div>
         </form>
+
+        {#if result !== undefined && show}
+            <div class="flex justify-center" in:fly={{ y: -200, duration: 200}}>
+                <ArrowDown class="text-zinc-400 w-6 h-6 text-center"/>
+            </div>
+            <div 
+                in:scale={{ duration: 200 }}
+                class="text-center p-2 rounded-md border border-zinc-600 bg-zinc-800 "
+            >
+                <p class="text-lg text-zinc-400">Result</p>
+                <div 
+                    class="result text-zinc-100 font-bold text-6xl"
+                >
+                    <span in:scale>{result?.toLocaleString('en-US') ?? '?'}</span>
+                </div>
+            </div>
+        {/if}
         
 
         {#if expanded.length > 1 && show}
+            <div class="flex justify-center" in:fly={{ y: 200, duration: 200 }}>
+                <ArrowUp class="text-zinc-400 w-6 h-6 text-center"/>
+            </div>
             <div 
-                in:scale={{  duration: 200 }}
+                in:fly={{ y: 200, duration: 200 }}
                 class="flex flex-wrap bg-zinc-800 gap-2 p-4 rounded-md border border-zinc-600"
             >
                 {#each expanded.filter(t => t.type !== 'eof') as t}
@@ -171,7 +218,7 @@
 
         {/if}
 
-        {#if smile}
+        <!-- {#if smile}
             <div 
                 in:scale={{  duration: 200 }}
                 class="result flex items-center gap-4 px-12 py-4 rounded-md bg-green-700 text-green-100 font-bold text-2xl mx-auto shadow-md max-w-full max-sm:flex-col max-sm:w-full"
@@ -189,25 +236,28 @@
                 <span>Invalid Syntax</span>
                 <Frown class="w-12 h-12"/>
             </div>
-        {/if}
+        {/if} -->
 
         {#if empty}
+            <div class="flex justify-center" in:fly={{ y: 200, duration: 200 }}>
+                <Dice6 class="text-zinc-400 w-6 h-6 text-center"/>
+            </div>
             <div 
                 in:fly={{  duration: 200, y: 250 }}
-                class="text-zinc-300">
+                class="text-zinc-300 rounded-md border border-zinc-600 overflow-hidden bg-zinc-800">
 
-                <p class="mb-4 text-lg text-zinc-400">Examples:</p>
-                <ul class="rounded-md border border-zinc-600 overflow-hidden bg-zinc-800">
+                <p class="p-2 text-lg text-zinc-400">Examples:</p>
+                <ul class="">
                     {#each examples as ex}
-                        <li class="flex items-center p-2 border-b border-zinc-600 last-of-type:border-none">
+                        <li class="flex items-center p-2 border-t border-zinc-600">
                             <span>{ex}</span>
                             <button
-                                onclick={() => { 
+                                onclick={async () => { 
                                     q = ex;
-                                    show = false;
-                                    expanded = expand();
+                                    await tick();
+                                    recalcTextArea();
                                 }}
-                                class="ml-auto border border-zinc-600 py-1 px-2 text-sm bg-zinc-900 rounded-md shadow-md shadow-zinc-800"
+                                class="ml-auto border border-zinc-600 py-1 px-2 text-sm bg-zinc-950 rounded-md shadow-md shadow-zinc-900 shrink-0"
                             >
                                 Try It!
                             </button>
@@ -215,17 +265,7 @@
                     {/each}
                 </ul>
             </div>
-        {/if}
-
-        {#if result !== undefined && show}
-            <div 
-                in:scale={{  duration: 200 }}
-                class="result flex flex-wrap gap-2 px-12 py-4 rounded-md text-zinc-100 font-bold text-6xl mx-auto border border-zinc-600 bg-zinc-800 shadow-md max-w-full"
-            >
-                <span in:scale>{result?.toLocaleString('en-US') ?? '?'}</span>
-            </div>
-        {/if}
-        
+        {/if} 
     </div>
 </div>
 
